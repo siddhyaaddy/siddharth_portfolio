@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siddharth Adhikari | Data Science Portfolio</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'display': ['Space Grotesk', 'sans-serif'],
+                        'body': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'void': '#030305',
+                        'mist': '#f0f0f0',
+                        'neon': '#00ff88',
+                        'electric': '#0066ff',
+                        'heat': '#ff3366',
+                        'gold': '#ffd700',
+                        'purple': '#a855f7',
+                        'cyan': '#00ffff',
+                        'orange': '#ff6b35',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { overflow-x: hidden; scroll-behavior: auto; }
+        body { font-family: 'Inter', sans-serif; background: #030305; color: #f0f0f0; overflow-x: hidden; cursor: none; }
+
+        /* Custom Cursor */
+        .cursor { position: fixed; width: 20px; height: 20px; border: 2px solid #00ff88; border-radius: 50%; pointer-events: none; z-index: 9999; transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s; mix-blend-mode: difference; transform: translate(-50%, -50%); }
+        .cursor.hover { width: 60px; height: 60px; background: rgba(0, 255, 136, 0.1); border-color: #00ff88; }
+        .cursor-dot { position: fixed; width: 4px; height: 4px; background: #00ff88; border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); }
+
+        /* Noise & Progress */
+        .noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #00ff88, #0066ff, #a855f7, #ff3366); z-index: 10000; transform-origin: left; transform: scaleX(0); box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+
+        /* WebGL */
+        #webgl-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+        /* Glass */
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .glass:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(0, 255, 136, 0.3); transform: translateY(-2px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+
+        /* Magnetic Button */
+        .magnetic-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 1rem 2rem; background: transparent; border: 1px solid #00ff88; color: #00ff88; border-radius: 100px; font-weight: 600; overflow: hidden; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .magnetic-btn::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #00ff88; transform: scaleX(0); transform-origin: right; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: -1; }
+        .magnetic-btn:hover::before { transform: scaleX(1); transform-origin: left; }
+        .magnetic-btn:hover { color: #030305; transform: scale(1.05); }
+
+        /* Gradient Text */
+        .gradient-text { background: linear-gradient(135deg, #00ff88 0%, #0066ff 25%, #a855f7 50%, #ff3366 75%, #00ff88 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 300% 300%; animation: gradient-shift 5s ease infinite; }
+        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* Hero Image */
+        .hero-image-container { position: relative; width: 400px; height: 400px; border-radius: 50%; overflow: hidden; border: 3px solid rgba(0, 255, 136, 0.3); box-shadow: 0 0 60px rgba(0, 255, 136, 0.2); animation: morph 8s ease-in-out infinite; }
+        .hero-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .hero-image-container:hover img { transform: scale(1.1); }
+        @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; } }
+
+        /* Orbit */
+        .orbit-container { position: relative; width: 100%; height: 600px; }
+        .orbit-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50%; }
+        .orbit-item { position: absolute; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer; }
+        .orbit-item:hover { transform: scale(1.3) !important; background: rgba(0, 255, 136, 0.15); border-color: #00ff88; box-shadow: 0 0 30px rgba(0, 255, 136, 0.4); }
+
+        /* Skill Card */
+        .skill-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 2rem; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden; }
+        .skill-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent); transition: left 0.7s; }
+        .skill-card:hover::before { left: 100%; }
+        .skill-card:hover { transform: translateY(-10px) scale(1.02); border-color: rgba(0, 255, 136, 0.4); box-shadow: 0 30px 60px -15px rgba(0, 255, 136, 0.2); }
+
+        /* Project Card */
+        .project-card { position: relative; border-radius: 24px; overflow: hidden; background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .project-card:hover { transform: translateY(-10px); border-color: rgba(0, 255, 136, 0.3); box-shadow: 0 40px 80px -20px rgba(0, 255, 136, 0.15); }
+        .project-image { position: relative; height: 300px; overflow: hidden; }
+        .project-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(3, 3, 5, 0.9), transparent); }
+        .project-card:hover .project-image img { transform: scale(1.1); }
+
+        /* Education Cards - Vertical Layout */
+        .edu-card { position: relative; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 2.5rem; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden; }
+        .edu-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(to bottom, #00ff88, #0066ff); transition: width 0.3s; }
+        .edu-card:hover::before { width: 100%; opacity: 0.1; }
+        .edu-card:hover { transform: translateX(10px); border-color: rgba(0, 255, 136, 0.3); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .edu-icon { width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 1.5rem; transition: all 0.3s; }
+        .edu-card:hover .edu-icon { transform: scale(1.1) rotate(5deg); }
+
+        /* Experience Timeline - Horizontal Cards */
+        .exp-timeline { position: relative; }
+        .exp-timeline::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #ff3366, #ffd700, #00ff88); transform: translateX(-50%); }
+        .exp-card { position: relative; width: calc(50% - 40px); background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 2rem; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .exp-card:hover { transform: translateY(-5px) scale(1.02); border-color: rgba(255, 51, 102, 0.4); box-shadow: 0 30px 60px -15px rgba(255, 51, 102, 0.15); }
+        .exp-card:nth-child(odd) { margin-left: auto; margin-right: 60px; }
+        .exp-card:nth-child(even) { margin-right: auto; margin-left: 60px; }
+        .exp-dot { position: absolute; width: 24px; height: 24px; background: #030305; border: 3px solid #ff3366; border-radius: 50%; top: 2rem; z-index: 10; box-shadow: 0 0 20px rgba(255, 51, 102, 0.5); transition: all 0.3s; }
+        .exp-card:nth-child(odd) .exp-dot { left: -52px; }
+        .exp-card:nth-child(even) .exp-dot { right: -52px; }
+        .exp-card:hover .exp-dot { transform: scale(1.3); box-shadow: 0 0 40px rgba(255, 51, 102, 0.8); }
+
+        /* Cert Card */
+        .cert-card { position: relative; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 2rem; transition: all 0.4s; overflow: hidden; }
+        .cert-card::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%); opacity: 0; transition: opacity 0.4s; }
+        .cert-card:hover::after { opacity: 1; }
+        .cert-card:hover { transform: translateY(-5px); border-color: rgba(0, 255, 136, 0.3); }
+
+        /* Contact */
+        .contact-bg { position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(0, 255, 136, 0.1) 0%, transparent 70%); animation: pulse 4s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 0.8; } }
+
+        /* Reveal Animation */
+        .reveal { opacity: 0; transform: translateY(50px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            body { cursor: auto; }
+            .cursor, .cursor-dot { display: none; }
+            .hero-image-container { width: 280px; height: 280px; }
+            .orbit-container { height: 400px; }
+            .exp-timeline::before { left: 20px; }
+            .exp-card { width: calc(100% - 60px); margin-left: 60px !important; margin-right: 0 !important; }
+            .exp-dot { left: -46px !important; right: auto !important; }
+            .edu-card:hover { transform: translateX(5px); }
+        }
+
+        /* Loader */
+        .loader { position: fixed; inset: 0; background: #030305; z-index: 99999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s, visibility 0.5s; }
+        .loader.hidden { opacity: 0; visibility: hidden; }
+        .loader-text { font-size: 2rem; font-weight: 700; color: #00ff88; animation: pulse 1.5s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+    <!-- Loader -->
+    <div class="loader" id="loader"><div class="loader-text">SA.</div></div>
+
+    <!-- Cursor -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="noise"></div>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 px-6 py-6 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="#hero" class="display-font text-3xl font-bold text-white hover:text-neon transition-colors">SA<span class="text-neon">.</span></a>
+            
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#about" class="nav-link text-sm text-white/70 hover:text-white transition-colors relative group">About<span class="absolute -bottom-1 left-0 w-0 h-px bg-neon transition-all group-hover:w-full"></span></a>
+                <a href="#skills" class="nav-link text-sm text-white/70 hover:text-white transition-colors relative group">Skills<span class="absolute -bottom-1 left-0 w-0 h-px bg-neon transition-all group-hover:w-full"></span></a>
+                <a href="#projects" class="nav-link text-sm text-white/70 hover:text-white transition-colors relative group">Projects<span class="absolute -bottom-1 left-0 w-0 h-px bg-neon transition-all group-hover:w-full"></span></a>
+                <a href="#education" class="nav-link text-sm text-white/70 hover:text-white transition-colors relative group">Education<span class="absolute -bottom-1 left-0 w-0 h-px bg-neon transition-all group-hover:w-full"></span></a>
+                <a href="#experience" class="nav-link text-sm text-white/70 hover:text-white transition-colors relative group">Experience<span class="absolute -bottom-1 left-0 w-0 h-px bg-neon transition-all group-hover:w-full"></span></a>
+                <a href="#contact" class="magnetic-btn text-sm">Let's Talk</a>
+            </div>
+
+            <button class="md:hidden text-white text-2xl" id="menuBtn"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="fixed inset-0 bg-void/95 backdrop-blur-xl z-40 transform translate-x-full transition-transform duration-500 flex items-center justify-center" id="mobileMenu">
+        <button class="absolute top-6 right-6 text-white text-3xl" id="closeMenu"><i class="fas fa-times"></i></button>
+        <div class="flex flex-col gap-8 text-center">
+            <a href="#about" class="display-font text-4xl text-white hover:text-neon transition-colors mobile-link">About</a>
+            <a href="#skills" class="display-font text-4xl text-white hover:text-neon transition-colors mobile-link">Skills</a>
+            <a href="#projects" class="display-font text-4xl text-white hover:text-neon transition-colors mobile-link">Projects</a>
+            <a href="#education" class="display-font text-4xl text-white hover:text-neon transition-colors mobile-link">Education</a>
+            <a href="#experience" class="display-font text-4xl text-white hover:text-neon transition-colors mobile-link">Experience</a>
+            <a href="#contact" class="display-font text-4xl text-white hover:text-neon transition-colors mobile-link">Contact</a>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="hero" class="min-h-screen flex items-center relative overflow-hidden pt-20">
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="absolute top-20 left-10 w-96 h-96 bg-neon/20 rounded-full blur-[100px] animate-pulse"></div>
+            <div class="absolute bottom-20 right-10 w-[500px] h-[500px] bg-electric/20 rounded-full blur-[100px] animate-pulse" style="animation-delay: -3s;"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-6 py-20 w-full relative z-10">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="space-y-8 order-2 lg:order-1">
+                    <div class="inline-flex items-center gap-3 px-5 py-2.5 glass rounded-full">
+                        <div class="w-2.5 h-2.5 bg-neon rounded-full animate-pulse"></div>
+                        <span class="text-sm text-white/70 font-medium tracking-wide">Available for opportunities</span>
+                    </div>
+
+                    <div class="space-y-2">
+                        <p class="text-white/50 text-lg">Hello, I'm</p>
+                        <h1 class="display-font text-6xl md:text-8xl font-bold leading-none">Siddharth<br><span class="gradient-text">Adhikari</span></h1>
+                    </div>
+
+                    <p class="text-xl text-white/60">Data Scientist & ML Engineer</p>
+                    <p class="text-lg text-white/50 max-w-lg leading-relaxed">Transforming complex data into intelligent solutions. Specializing in deep learning, predictive analytics, and scalable ML systems.</p>
+
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#projects" class="magnetic-btn">View Projects <i class="fas fa-arrow-right ml-2"></i></a>
+                        <a href="#contact" class="px-8 py-4 border border-white/20 text-white rounded-full hover:bg-white/5 transition-all">Get in Touch</a>
+                    </div>
+
+                    <div class="flex gap-12 pt-8 border-t border-white/10">
+                        <div><div class="display-font text-4xl font-bold text-neon">3.5</div><div class="text-sm text-white/40 mt-1">GPA</div></div>
+                        <div><div class="display-font text-4xl font-bold text-electric">15+</div><div class="text-sm text-white/40 mt-1">Projects</div></div>
+                        <div><div class="display-font text-4xl font-bold text-heat">4</div><div class="text-sm text-white/40 mt-1">Internships</div></div>
+                    </div>
+                </div>
+
+                <div class="order-1 lg:order-2 flex justify-center">
+                    <div class="relative">
+                        <div class="orbit-container" id="orbitContainer">
+                            <div class="orbit-ring w-[400px] h-[400px] md:w-[500px] md:h-[500px] animate-spin" style="animation-duration: 30s;"></div>
+                            <div class="orbit-ring w-[320px] h-[320px] md:w-[400px] md:h-[400px] animate-spin" style="animation-duration: 25s; animation-direction: reverse; border-style: dashed;"></div>
+                            <div class="orbit-ring w-[240px] h-[240px] md:w-[300px] md:h-[300px] animate-spin" style="animation-duration: 20s;"></div>
+
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                <div class="hero-image-container">
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" alt="Siddharth Adhikari" id="profileImage" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-neon/20 to-electric/20 text-6xl font-bold text-white/20 hidden" id="profileFallback">SA</div>
+                                </div>
+                            </div>
+
+                            <div class="orbit-item text-neon" data-orbit="outer" data-angle="0"><i class="fab fa-python"></i></div>
+                            <div class="orbit-item text-electric" data-orbit="outer" data-angle="60"><i class="fas fa-database"></i></div>
+                            <div class="orbit-item text-heat" data-orbit="outer" data-angle="120"><i class="fab fa-aws"></i></div>
+                            <div class="orbit-item text-gold" data-orbit="outer" data-angle="180"><i class="fas fa-brain"></i></div>
+                            <div class="orbit-item text-purple" data-orbit="outer" data-angle="240"><i class="fas fa-robot"></i></div>
+                            <div class="orbit-item text-cyan" data-orbit="outer" data-angle="300"><i class="fas fa-chart-line"></i></div>
+
+                            <div class="orbit-item text-electric" data-orbit="middle" data-angle="30"><i class="fas fa-code"></i></div>
+                            <div class="orbit-item text-heat" data-orbit="middle" data-angle="90"><i class="fas fa-server"></i></div>
+                            <div class="orbit-item text-gold" data-orbit="middle" data-angle="150"><i class="fas fa-network-wired"></i></div>
+                            <div class="orbit-item text-purple" data-orbit="middle" data-angle="210"><i class="fas fa-cloud"></i></div>
+                            <div class="orbit-item text-cyan" data-orbit="middle" data-angle="270"><i class="fas fa-cube"></i></div>
+                            <div class="orbit-item text-neon" data-orbit="middle" data-angle="330"><i class="fas fa-microchip"></i></div>
+
+                            <div class="orbit-item text-heat" data-orbit="inner" data-angle="45"><i class="fab fa-git-alt"></i></div>
+                            <div class="orbit-item text-gold" data-orbit="inner" data-angle="135"><i class="fas fa-table"></i></div>
+                            <div class="orbit-item text-purple" data-orbit="inner" data-angle="225"><i class="fas fa-bolt"></i></div>
+                            <div class="orbit-item text-cyan" data-orbit="inner" data-angle="315"><i class="fas fa-docker"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-32 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-12 gap-16 items-center">
+                <div class="lg:col-span-5 reveal">
+                    <div class="relative group">
+                        <div class="absolute inset-0 bg-gradient-to-br from-neon/30 to-electric/30 rounded-3xl transform rotate-3 group-hover:rotate-6 transition-transform duration-500"></div>
+                        <div class="relative aspect-[4/5] rounded-3xl overflow-hidden border border-white/10">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=750&fit=crop" alt="About Siddharth" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-void/80 via-transparent to-transparent"></div>
+                        </div>
+                        <div class="absolute -bottom-6 -right-6 glass px-6 py-4 rounded-2xl animate-bounce" style="animation-duration: 3s;">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-neon/20 flex items-center justify-center"><i class="fas fa-graduation-cap text-neon text-xl"></i></div>
+                                <div><div class="display-font text-2xl font-bold text-white">3.5</div><div class="text-xs text-white/50">GPA</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 space-y-8 reveal">
+                    <div class="inline-flex items-center gap-2 text-neon text-sm tracking-widest uppercase font-semibold"><span class="w-8 h-px bg-neon"></span>About Me</div>
+                    <h2 class="display-font text-5xl md:text-6xl font-bold leading-tight">Crafting Intelligence<br>from <span class="gradient-text">Raw Data</span></h2>
+                    <div class="space-y-4 text-white/60 leading-relaxed text-lg">
+                        <p>I'm a <strong class="text-white">Master's graduate in Data Science</strong> from the University at Buffalo, equipped with a robust foundation in Computer Engineering.</p>
+                        <p>With expertise spanning <span class="text-neon font-semibold">deep learning architectures</span>, <span class="text-electric font-semibold">distributed computing</span>, and <span class="text-heat font-semibold">statistical inference</span>.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6 pt-6">
+                        <div class="glass rounded-2xl p-6 group hover:bg-white/5 transition-all cursor-pointer">
+                            <div class="flex items-center gap-4 mb-3"><div class="w-12 h-12 rounded-xl bg-neon/10 flex items-center justify-center text-neon group-hover:scale-110 transition-transform"><i class="fas fa-project-diagram text-xl"></i></div><div class="display-font text-3xl font-bold text-neon">15+</div></div>
+                            <div class="text-sm text-white/50">ML Models Deployed</div>
+                        </div>
+                        <div class="glass rounded-2xl p-6 group hover:bg-white/5 transition-all cursor-pointer">
+                            <div class="flex items-center gap-4 mb-3"><div class="w-12 h-12 rounded-xl bg-electric/10 flex items-center justify-center text-electric group-hover:scale-110 transition-transform"><i class="fas fa-briefcase text-xl"></i></div><div class="display-font text-3xl font-bold text-electric">4</div></div>
+                            <div class="text-sm text-white/50">Research Internships</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center gap-2 text-neon text-sm tracking-widest uppercase font-semibold mb-4"><span class="w-8 h-px bg-neon"></span>Technical Arsenal<span class="w-8 h-px bg-neon"></span></div>
+                <h2 class="display-font text-6xl md:text-8xl font-bold">Skills & Tools</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="skill-card reveal">
+                    <div class="flex items-center gap-4 mb-6"><div class="w-14 h-14 rounded-2xl bg-neon/10 flex items-center justify-center text-neon text-2xl"><i class="fas fa-code"></i></div><h3 class="display-font text-xl font-bold">Programming</h3></div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between"><span class="text-white/70">Python</span><div class="flex gap-1"><div class="w-2 h-2 rounded-full bg-neon"></div><div class="w-2 h-2 rounded-full bg-neon"></div><div class="w-2 h-2 rounded-full bg-neon"></div><div class="w-2 h-2 rounded-full bg-neon"></div><div class="w-2 h-2 rounded-full bg-neon/30"></div></div></div>
+                        <div class="flex items-center justify-between"><span class="text-white/70">SQL</span><div class="flex gap-1"><div class="w-2 h-2 rounded-full bg-electric"></div><div class="w-2 h-2 rounded-full bg-electric"></div><div class="w-2 h-2 rounded-full bg-electric"></div><div class="w-2 h-2 rounded-full bg-electric"></div><div class="w-2 h-2 rounded-full bg-electric/30"></div></div></div>
+                        <div class="flex items-center justify-between"><span class="text-white/70">R</span><div class="flex gap-1"><div class="w-2 h-2 rounded-full bg-heat"></div><div class="w-2 h-2 rounded-full bg-heat"></div><div class="w-2 h-2 rounded-full bg-heat"></div><div class="w-2 h-2 rounded-full bg-heat/30"></div><div class="w-2 h-2 rounded-full bg-heat/30"></div></div></div>
+                    </div>
+                </div>
+
+                <div class="skill-card reveal" style="transition-delay: 100ms;">
+                    <div class="flex items-center gap-4 mb-6"><div class="w-14 h-14 rounded-2xl bg-electric/10 flex items-center justify-center text-electric text-2xl"><i class="fas fa-brain"></i></div><h3 class="display-font text-xl font-bold">ML / DL</h3></div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-sm">TensorFlow</span>
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-sm">PyTorch</span>
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-sm">Scikit-learn</span>
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-sm">Keras</span>
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-sm">XGBoost</span>
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-sm">Hugging Face</span>
+                    </div>
+                </div>
+
+                <div class="skill-card reveal" style="transition-delay: 200ms;">
+                    <div class="flex items-center gap-4 mb-6"><div class="w-14 h-14 rounded-2xl bg-heat/10 flex items-center justify-center text-heat text-2xl"><i class="fas fa-cloud"></i></div><h3 class="display-font text-xl font-bold">Cloud & Data</h3></div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-sm">AWS</span>
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-sm">Docker</span>
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-sm">Kubernetes</span>
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-sm">Apache Spark</span>
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-sm">Kafka</span>
+                    </div>
+                </div>
+
+                <div class="skill-card reveal">
+                    <div class="flex items-center gap-4 mb-6"><div class="w-14 h-14 rounded-2xl bg-gold/10 flex items-center justify-center text-gold text-2xl"><i class="fas fa-chart-line"></i></div><h3 class="display-font text-xl font-bold">Visualization</h3></div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-gold/10 text-gold rounded-lg text-sm">Tableau</span>
+                        <span class="px-3 py-1.5 bg-gold/10 text-gold rounded-lg text-sm">Power BI</span>
+                        <span class="px-3 py-1.5 bg-gold/10 text-gold rounded-lg text-sm">Matplotlib</span>
+                        <span class="px-3 py-1.5 bg-gold/10 text-gold rounded-lg text-sm">Seaborn</span>
+                    </div>
+                </div>
+
+                <div class="skill-card reveal" style="transition-delay: 100ms;">
+                    <div class="flex items-center gap-4 mb-6"><div class="w-14 h-14 rounded-2xl bg-purple/10 flex items-center justify-center text-purple text-2xl"><i class="fas fa-database"></i></div><h3 class="display-font text-xl font-bold">Big Data</h3></div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-purple/10 text-purple rounded-lg text-sm">Hadoop</span>
+                        <span class="px-3 py-1.5 bg-purple/10 text-purple rounded-lg text-sm">Spark</span>
+                        <span class="px-3 py-1.5 bg-purple/10 text-purple rounded-lg text-sm">Hive</span>
+                        <span class="px-3 py-1.5 bg-purple/10 text-purple rounded-lg text-sm">Airflow</span>
+                    </div>
+                </div>
+
+                <div class="skill-card reveal" style="transition-delay: 200ms;">
+                    <div class="flex items-center gap-4 mb-6"><div class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-white text-2xl"><i class="fas fa-users"></i></div><h3 class="display-font text-xl font-bold">Soft Skills</h3></div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-white/5 text-white/70 rounded-lg text-sm">Problem Solving</span>
+                        <span class="px-3 py-1.5 bg-white/5 text-white/70 rounded-lg text-sm">Communication</span>
+                        <span class="px-3 py-1.5 bg-white/5 text-white/70 rounded-lg text-sm">Leadership</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="py-32 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-20 reveal">
+                <div>
+                    <div class="inline-flex items-center gap-2 text-electric text-sm tracking-widest uppercase font-semibold mb-4"><span class="w-8 h-px bg-electric"></span>Featured Work</div>
+                    <h2 class="display-font text-6xl md:text-8xl font-bold">Projects</h2>
+                </div>
+                <a href="https://github.com/siddhyaaddy" target="_blank" class="mt-6 md:mt-0 group flex items-center gap-3 text-white/50 hover:text-white transition-colors">
+                    <span>View all on GitHub</span><i class="fas fa-arrow-right transform group-hover:translate-x-2 transition-transform"></i>
+                </a>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="project-card reveal group cursor-pointer" onclick="window.open('https://github.com/siddhyaaddy/NYC_taxi', '_blank')">
+                    <div class="project-image">
+                        <div class="absolute inset-0 bg-gradient-to-br from-neon/30 to-electric/30"></div>
+                        <div class="absolute inset-0 flex items-center justify-center"><span class="display-font text-9xl font-bold text-white/5 group-hover:text-white/10 transition-all duration-500 group-hover:scale-110">01</span></div>
+                        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 glass text-xs text-neon rounded-full">Python</span><span class="px-3 py-1 glass text-xs text-neon rounded-full">LSTM</span></div>
+                        <div class="absolute inset-0 bg-void/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"><div class="text-center"><i class="fas fa-external-link-alt text-4xl text-neon mb-2"></i><p class="text-white font-semibold">View Project</p></div></div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="display-font text-2xl font-bold mb-3 group-hover:text-neon transition-colors">NYC Taxi Demand Forecasting</h3>
+                        <p class="text-white/50 mb-4 line-clamp-2">Deep learning model processing 2.3M+ data points for real-time demand prediction. Achieved 94% accuracy using LSTM neural networks.</p>
+                        <div class="flex gap-4 text-sm text-white/30"><span>2.3M Data Points</span><span>•</span><span>94% Accuracy</span></div>
+                    </div>
+                </div>
+
+                <div class="project-card reveal group cursor-pointer" style="transition-delay: 100ms;" onclick="window.open('https://github.com/siddhyaaddy/rideflow-analytics', '_blank')">
+                    <div class="project-image">
+                        <div class="absolute inset-0 bg-gradient-to-br from-electric/30 to-heat/30"></div>
+                        <div class="absolute inset-0 flex items-center justify-center"><span class="display-font text-9xl font-bold text-white/5 group-hover:text-white/10 transition-all duration-500 group-hover:scale-110">02</span></div>
+                        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 glass text-xs text-electric rounded-full">Kafka</span><span class="px-3 py-1 glass text-xs text-electric rounded-full">AWS</span></div>
+                        <div class="absolute inset-0 bg-void/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"><div class="text-center"><i class="fas fa-external-link-alt text-4xl text-electric mb-2"></i><p class="text-white font-semibold">View Project</p></div></div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="display-font text-2xl font-bold mb-3 group-hover:text-electric transition-colors">RideFlow Analytics</h3>
+                        <p class="text-white/50 mb-4 line-clamp-2">Real-time streaming data pipeline processing millions of ride events daily. Built with Apache Kafka, Docker, and AWS.</p>
+                        <div class="flex gap-4 text-sm text-white/30"><span>Real-time</span><span>•</span><span>Stream Analytics</span></div>
+                    </div>
+                </div>
+
+                <div class="project-card reveal group cursor-pointer" onclick="window.open('https://github.com/siddhyaaddy/Virtual-Trial-Room', '_blank')">
+                    <div class="project-image">
+                        <div class="absolute inset-0 bg-gradient-to-br from-heat/30 to-gold/30"></div>
+                        <div class="absolute inset-0 flex items-center justify-center"><span class="display-font text-9xl font-bold text-white/5 group-hover:text-white/10 transition-all duration-500 group-hover:scale-110">03</span></div>
+                        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 glass text-xs text-heat rounded-full">Computer Vision</span><span class="px-3 py-1 glass text-xs text-heat rounded-full">AR</span></div>
+                        <div class="absolute inset-0 bg-void/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"><div class="text-center"><i class="fas fa-external-link-alt text-4xl text-heat mb-2"></i><p class="text-white font-semibold">View Project</p></div></div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="display-font text-2xl font-bold mb-3 group-hover:text-heat transition-colors">Virtual Trial Room</h3>
+                        <p class="text-white/50 mb-4 line-clamp-2">AR-powered virtual fitting room using pose estimation and garment segmentation. Published research paper.</p>
+                        <div class="flex gap-4 text-sm text-white/30"><span>AR Technology</span><span>•</span><span>Published</span></div>
+                    </div>
+                </div>
+
+                <div class="project-card reveal group cursor-pointer" style="transition-delay: 100ms;" onclick="window.open('https://github.com/siddhyaaddy/sentiment-wars', '_blank')">
+                    <div class="project-image">
+                        <div class="absolute inset-0 bg-gradient-to-br from-gold/30 to-purple/30"></div>
+                        <div class="absolute inset-0 flex items-center justify-center"><span class="display-font text-9xl font-bold text-white/5 group-hover:text-white/10 transition-all duration-500 group-hover:scale-110">04</span></div>
+                        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 glass text-xs text-gold rounded-full">BERT</span><span class="px-3 py-1 glass text-xs text-gold rounded-full">NLP</span></div>
+                        <div class="absolute inset-0 bg-void/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"><div class="text-center"><i class="fas fa-external-link-alt text-4xl text-gold mb-2"></i><p class="text-white font-semibold">View Project</p></div></div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="display-font text-2xl font-bold mb-3 group-hover:text-gold transition-colors">Sentiment Wars</h3>
+                        <p class="text-white/50 mb-4 line-clamp-2">Comparative analysis of ML vs Transformer models. Benchmarked BERT, RoBERTa, and DistilBERT.</p>
+                        <div class="flex gap-4 text-sm text-white/30"><span>Transformers</span><span>•</span><span>NLP</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EDUCATION SECTION - SEPARATE -->
+    <section id="education" class="py-32 relative overflow-hidden bg-gradient-to-b from-transparent via-electric/5 to-transparent">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center gap-2 text-electric text-sm tracking-widest uppercase font-semibold mb-4">
+                    <span class="w-8 h-px bg-electric"></span>
+                    Academic Background
+                    <span class="w-8 h-px bg-electric"></span>
+                </div>
+                <h2 class="display-font text-6xl md:text-8xl font-bold mb-6">Education</h2>
+                <p class="text-white/50 text-lg max-w-2xl mx-auto">Building strong foundations in data science and computer engineering through rigorous academic training.</p>
+            </div>
+
+            <div class="space-y-8">
+                <!-- Master's Degree -->
+                <div class="edu-card reveal group">
+                    <div class="flex flex-col md:flex-row md:items-center gap-6 md:gap-12">
+                        <div class="edu-icon bg-electric/10 text-electric">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3 mb-2">
+                                <span class="text-electric text-sm font-semibold px-3 py-1 bg-electric/10 rounded-full">2024 — 2025</span>
+                                <span class="text-white/40 text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Buffalo, NY</span>
+                            </div>
+                            <h3 class="display-font text-3xl font-bold mb-1 group-hover:text-electric transition-colors">Master of Science in Data Science</h3>
+                            <p class="text-electric text-lg mb-3">University at Buffalo, State University of New York</p>
+                            <p class="text-white/50 mb-4">GPA: 3.5/4.0 | Focus on Deep Learning, Big Data Analytics, and Statistical Modeling</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Deep Learning</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Neural Networks</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Big Data Analytics</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Statistical Modeling</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Machine Learning</span>
+                            </div>
+                        </div>
+                        <div class="hidden md:block text-right">
+                            <div class="display-font text-5xl font-bold text-electric/20 group-hover:text-electric/40 transition-colors">MS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bachelor's Degree -->
+                <div class="edu-card reveal group" style="transition-delay: 100ms;">
+                    <div class="flex flex-col md:flex-row md:items-center gap-6 md:gap-12">
+                        <div class="edu-icon bg-purple/10 text-purple">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3 mb-2">
+                                <span class="text-purple text-sm font-semibold px-3 py-1 bg-purple/10 rounded-full">2020 — 2024</span>
+                                <span class="text-white/40 text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Pune, India</span>
+                            </div>
+                            <h3 class="display-font text-3xl font-bold mb-1 group-hover:text-purple transition-colors">Bachelor of Engineering in Computer Engineering</h3>
+                            <p class="text-purple text-lg mb-3">Savitribai Phule Pune University</p>
+                            <p class="text-white/50 mb-4">GPA: 3.7/4.0 | Data Science Honors | Relevant Coursework: Data Structures, Algorithms, Database Systems</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Data Structures</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Algorithms</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Database Systems</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Operating Systems</span>
+                                <span class="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs border border-white/10">Computer Networks</span>
+                            </div>
+                        </div>
+                        <div class="hidden md:block text-right">
+                            <div class="display-font text-5xl font-bold text-purple/20 group-hover:text-purple/40 transition-colors">BE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EXPERIENCE SECTION - SEPARATE -->
+    <section id="experience" class="py-32 relative overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center gap-2 text-heat text-sm tracking-widest uppercase font-semibold mb-4">
+                    <span class="w-8 h-px bg-heat"></span>
+                    Professional Journey
+                    <span class="w-8 h-px bg-heat"></span>
+                </div>
+                <h2 class="display-font text-6xl md:text-8xl font-bold mb-6">Experience</h2>
+                <p class="text-white/50 text-lg max-w-2xl mx-auto">Practical industry experience through internships and research positions in data science and analytics.</p>
+            </div>
+
+            <div class="exp-timeline space-y-12">
+                <!-- Internship 1 -->
+                <div class="exp-card reveal">
+                    <div class="exp-dot"></div>
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                        <span class="text-heat text-sm font-semibold px-3 py-1 bg-heat/10 rounded-full">Feb 2024</span>
+                        <span class="text-white/40 text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Remote</span>
+                    </div>
+                    <h3 class="display-font text-2xl font-bold mb-1 text-white group-hover:text-heat transition-colors">Data Science Trainee</h3>
+                    <p class="text-heat text-lg mb-3 font-medium">MedTourEasy</p>
+                    <p class="text-white/50 mb-4">Healthcare analytics with focus on medical tourism data and statistical frameworks. Developed predictive models for patient flow optimization.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-xs">Python</span>
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-xs">Pandas</span>
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-xs">Statistical Analysis</span>
+                        <span class="px-3 py-1.5 bg-heat/10 text-heat rounded-lg text-xs">Healthcare Data</span>
+                    </div>
+                </div>
+
+                <!-- Internship 2 -->
+                <div class="exp-card reveal" style="transition-delay: 100ms;">
+                    <div class="exp-dot" style="border-color: #ffd700;"></div>
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                        <span class="text-gold text-sm font-semibold px-3 py-1 bg-gold/10 rounded-full">Sep — Oct 2023</span>
+                        <span class="text-white/40 text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Remote</span>
+                    </div>
+                    <h3 class="display-font text-2xl font-bold mb-1 text-white group-hover:text-gold transition-colors">Data Science Intern</h3>
+                    <p class="text-gold text-lg mb-3 font-medium">INTERNSAVY</p>
+                    <p class="text-white/50 mb-4">Data mining, predictive modeling, and advanced analytics across multiple domains. Built end-to-end ML pipelines for client projects.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-gold/10 text-gold rounded-lg text-xs">Machine Learning</span>
+                        <span class="px-3 py-1.5 bg-gold/10 text-gold rounded-lg text-xs">Data Visualization</span>
+                        <span class="px-3 py-1.5 bg-gold/10 text-gold rounded-lg text-xs">Predictive Modeling</span>
+                    </div>
+                </div>
+
+                <!-- Internship 3 -->
+                <div class="exp-card reveal" style="transition-delay: 200ms;">
+                    <div class="exp-dot" style="border-color: #00ff88;"></div>
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                        <span class="text-neon text-sm font-semibold px-3 py-1 bg-neon/10 rounded-full">Jan — Feb 2023</span>
+                        <span class="text-white/40 text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Pune, India</span>
+                    </div>
+                    <h3 class="display-font text-2xl font-bold mb-1 text-white group-hover:text-neon transition-colors">Software Development Intern</h3>
+                    <p class="text-neon text-lg mb-3 font-medium">TechBulls SoftTech</p>
+                    <p class="text-white/50 mb-4">Developed Employee Management System with CRUD operations and analytics dashboard. Implemented database optimization techniques.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-neon/10 text-neon rounded-lg text-xs">Python</span>
+                        <span class="px-3 py-1.5 bg-neon/10 text-neon rounded-lg text-xs">SQL</span>
+                        <span class="px-3 py-1.5 bg-neon/10 text-neon rounded-lg text-xs">Database Design</span>
+                        <span class="px-3 py-1.5 bg-neon/10 text-neon rounded-lg text-xs">Web Development</span>
+                    </div>
+                </div>
+
+                <!-- Internship 4 -->
+                <div class="exp-card reveal" style="transition-delay: 300ms;">
+                    <div class="exp-dot" style="border-color: #0066ff;"></div>
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                        <span class="text-electric text-sm font-semibold px-3 py-1 bg-electric/10 rounded-full">Aug — Oct 2022</span>
+                        <span class="text-white/40 text-sm"><i class="fas fa-map-marker-alt mr-1"></i>Remote</span>
+                    </div>
+                    <h3 class="display-font text-2xl font-bold mb-1 text-white group-hover:text-electric transition-colors">Content & Data Analytics Intern</h3>
+                    <p class="text-electric text-lg mb-3 font-medium">Knowledge Gate Eduventure</p>
+                    <p class="text-white/50 mb-4">Applied data analytics to optimize educational content platforms and user engagement. Created automated reporting systems.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-xs">Excel Analytics</span>
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-xs">Statistical Analysis</span>
+                        <span class="px-3 py-1.5 bg-electric/10 text-electric rounded-lg text-xs">Backend Development</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Certifications Section -->
+    <section id="certifications" class="py-32 relative bg-gradient-to-b from-transparent via-purple/5 to-transparent">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center gap-2 text-purple text-sm tracking-widest uppercase font-semibold mb-4"><span class="w-8 h-px bg-purple"></span>Certifications<span class="w-8 h-px bg-purple"></span></div>
+                <h2 class="display-font text-6xl md:text-8xl font-bold">Credentials</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="cert-card reveal group cursor-pointer">
+                    <div class="w-16 h-16 rounded-2xl bg-neon/10 flex items-center justify-center text-neon text-3xl mb-6 group-hover:scale-110 transition-transform"><i class="fab fa-aws"></i></div>
+                    <h3 class="font-bold text-lg mb-2">AWS Cloud Practitioner</h3>
+                    <p class="text-white/50 text-sm mb-4">Amazon Web Services</p>
+                    <div class="flex items-center justify-between"><span class="text-neon text-xs font-semibold">2024</span><i class="fas fa-check-circle text-neon"></i></div>
+                </div>
+
+                <div class="cert-card reveal group cursor-pointer" style="transition-delay: 100ms;">
+                    <div class="w-16 h-16 rounded-2xl bg-electric/10 flex items-center justify-center text-electric text-3xl mb-6 group-hover:scale-110 transition-transform"><i class="fas fa-brain"></i></div>
+                    <h3 class="font-bold text-lg mb-2">Machine Learning Specialization</h3>
+                    <p class="text-white/50 text-sm mb-4">Stanford Online & DeepLearning.AI</p>
+                    <div class="flex items-center justify-between"><span class="text-electric text-xs font-semibold">2023</span><i class="fas fa-check-circle text-electric"></i></div>
+                </div>
+
+                <div class="cert-card reveal group cursor-pointer" style="transition-delay: 200ms;">
+                    <div class="w-16 h-16 rounded-2xl bg-heat/10 flex items-center justify-center text-heat text-3xl mb-6 group-hover:scale-110 transition-transform"><i class="fas fa-chart-bar"></i></div>
+                    <h3 class="font-bold text-lg mb-2">Data Analyst Professional</h3>
+                    <p class="text-white/50 text-sm mb-4">Google</p>
+                    <div class="flex items-center justify-between"><span class="text-heat text-xs font-semibold">2023</span><i class="fas fa-check-circle text-heat"></i></div>
+                </div>
+
+                <div class="cert-card reveal group cursor-pointer" style="transition-delay: 300ms;">
+                    <div class="w-16 h-16 rounded-2xl bg-purple/10 flex items-center justify-center text-purple text-3xl mb-6 group-hover:scale-110 transition-transform"><i class="fas fa-robot"></i></div>
+                    <h3 class="font-bold text-lg mb-2">Deep Learning Specialization</h3>
+                    <p class="text-white/50 text-sm mb-4">DeepLearning.AI</p>
+                    <div class="flex items-center justify-between"><span class="text-purple text-xs font-semibold">2023</span><i class="fas fa-check-circle text-purple"></i></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-32 relative overflow-hidden">
+        <div class="contact-bg"></div>
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10 reveal">
+            <div class="inline-flex items-center gap-2 text-neon text-sm tracking-widest uppercase font-semibold mb-6"><span class="w-8 h-px bg-neon"></span>Get in Touch<span class="w-8 h-px bg-neon"></span></div>
+            <h2 class="display-font text-6xl md:text-9xl font-bold mb-8">Let's Build<br><span class="gradient-text">The Future</span></h2>
+            <p class="text-xl text-white/50 mb-12 max-w-2xl mx-auto">Ready to transform your data into actionable insights? Let's create something extraordinary together.</p>
+
+            <div class="flex flex-wrap justify-center gap-6 mb-16">
+                <a href="mailto:siddharthadhikari.workspace@gmail.com" class="magnetic-btn text-lg px-10 py-5"><i class="fas fa-envelope mr-3"></i>Send Email</a>
+                <a href="https://www.linkedin.com/in/siddharth-adhikari-40199b203/" target="_blank" class="px-10 py-5 border border-white/20 text-white rounded-full hover:bg-white/5 transition-all text-lg"><i class="fab fa-linkedin mr-3"></i>LinkedIn</a>
+            </div>
+
+            <div class="glass rounded-3xl p-8 inline-block max-w-2xl w-full">
+                <p class="text-white/30 text-sm mb-3 uppercase tracking-widest">Email</p>
+                <a href="mailto:siddharthadhikari.workspace@gmail.com" class="text-xl md:text-3xl font-bold hover:text-neon transition-colors break-all">siddharthadhikari.workspace@gmail.com</a>
+            </div>
+
+            <div class="flex justify-center gap-8 mt-12">
+                <a href="https://github.com/siddhyaaddy" target="_blank" class="w-14 h-14 rounded-full glass flex items-center justify-center text-white/50 hover:text-neon hover:border-neon/50 transition-all text-2xl group"><i class="fab fa-github group-hover:scale-110 transition-transform"></i></a>
+                <a href="https://www.linkedin.com/in/siddharth-adhikari-40199b203/" target="_blank" class="w-14 h-14 rounded-full glass flex items-center justify-center text-white/50 hover:text-neon hover:border-neon/50 transition-all text-2xl group"><i class="fab fa-linkedin-in group-hover:scale-110 transition-transform"></i></a>
+                <a href="https://www.kaggle.com/siddharthadhikari07" target="_blank" class="w-14 h-14 rounded-full glass flex items-center justify-center text-white/50 hover:text-neon hover:border-neon/50 transition-all text-2xl group"><i class="fab fa-kaggle group-hover:scale-110 transition-transform"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/10 relative z-10">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="display-font text-3xl font-bold text-white">SA<span class="text-neon">.</span></div>
+            <div class="text-white/30 text-sm">© 2024 Siddharth Adhikari. Crafted with precision & passion.</div>
+            <div class="flex gap-6 text-white/30 text-sm">
+                <a href="#" class="hover:text-white transition-colors">Privacy</a>
+                <a href="#" class="hover:text-white transition-colors">Terms</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Loader
+        window.addEventListener('load', () => setTimeout(() => document.getElementById('loader').classList.add('hidden'), 1000));
+
+        // Lenis Smooth Scroll
+        const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smooth: true });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
+        // Custom Cursor
+        const cursor = document.getElementById('cursor'), cursorDot = document.getElementById('cursorDot');
+        let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+        document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; cursorDot.style.left = mouseX + 'px'; cursorDot.style.top = mouseY + 'px'; });
+        function animateCursor() { cursorX += (mouseX - cursorX) * 0.1; cursorY += (mouseY - cursorY) * 0.1; cursor.style.left = cursorX + 'px'; cursor.style.top = cursorY + 'px'; requestAnimationFrame(animateCursor); }
+        animateCursor();
+        document.querySelectorAll('a, button, .glass, .skill-card, .project-card, .cert-card, .edu-card, .exp-card, .orbit-item').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+        });
+
+        // Scroll Progress & Navbar
+        const scrollProgress = document.getElementById('scrollProgress'), navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            scrollProgress.style.transform = `scaleX(${window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)})`;
+            navbar.classList.toggle('glass', window.scrollY > 100);
+        });
+
+        // Orbit Animation
+        function initOrbit() {
+            const container = document.getElementById('orbitContainer');
+            if (!container) return;
+            const centerX = container.offsetWidth / 2, centerY = container.offsetHeight / 2;
+            const orbits = { outer: Math.min(centerX, centerY) * 0.8, middle: Math.min(centerX, centerY) * 0.6, inner: Math.min(centerX, centerY) * 0.4 };
+            const items = container.querySelectorAll('.orbit-item');
+            items.forEach(item => {
+                const orbit = item.dataset.orbit, baseAngle = parseFloat(item.dataset.angle), radius = orbits[orbit];
+                const angle = baseAngle * (Math.PI / 180);
+                item.style.left = (centerX + radius * Math.cos(angle) - item.offsetWidth / 2) + 'px';
+                item.style.top = (centerY + radius * Math.sin(angle) - item.offsetHeight / 2) + 'px';
+            });
+            let rotation = 0;
+            function animate() {
+                rotation += 0.5;
+                items.forEach(item => {
+                    const orbit = item.dataset.orbit, baseAngle = parseFloat(item.dataset.angle), speed = orbit === 'outer' ? 1 : orbit === 'middle' ? -1.5 : 2;
+                    const radius = orbits[orbit], angle = (baseAngle + rotation * speed) * (Math.PI / 180);
+                    item.style.left = (centerX + radius * Math.cos(angle) - item.offsetWidth / 2) + 'px';
+                    item.style.top = (centerY + radius * Math.sin(angle) - item.offsetHeight / 2) + 'px';
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+        window.addEventListener('load', initOrbit);
+        window.addEventListener('resize', initOrbit);
+
+        // GSAP Animations
+        gsap.registerPlugin(ScrollTrigger);
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.utils.toArray('.reveal').forEach((element, index) => {
+            gsap.fromTo(element, { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: element, start: 'top 85%', toggleActions: 'play none none reverse' }, delay: index % 3 * 0.1 });
+        });
+
+        // Magnetic Buttons
+        document.querySelectorAll('.magnetic-btn').forEach(btn => {
+            btn.addEventListener('mousemove', (e) => { const rect = btn.getBoundingClientRect(); btn.style.transform = `translate(${(e.clientX - rect.left - rect.width / 2) * 0.3}px, ${(e.clientY - rect.top - rect.height / 2) * 0.3}px)`; });
+            btn.addEventListener('mouseleave', () => btn.style.transform = 'translate(0, 0)');
+        });
+
+        // Mobile Menu
+        const menuBtn = document.getElementById('menuBtn'), mobileMenu = document.getElementById('mobileMenu'), closeMenu = document.getElementById('closeMenu');
+        menuBtn.addEventListener('click', () => mobileMenu.classList.remove('translate-x-full'));
+        closeMenu.addEventListener('click', () => mobileMenu.classList.add('translate-x-full'));
+        document.querySelectorAll('.mobile-link').forEach(link => link.addEventListener('click', () => mobileMenu.classList.add('translate-x-full')));
+
+        // WebGL Background
+        const canvas = document.getElementById('webgl-canvas'), renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 30;
+        const particlesGeometry = new THREE.BufferGeometry(), particlesCount = 2000, posArray = new Float32Array(particlesCount * 3), colorArray = new Float32Array(particlesCount * 3);
+        for (let i = 0; i < particlesCount * 3; i += 3) {
+            posArray[i] = (Math.random() - 0.5) * 100; posArray[i + 1] = (Math.random() - 0.5) * 100; posArray[i + 2] = (Math.random() - 0.5) * 100;
+            const color = new THREE.Color(); color.setHSL(Math.random() * 0.2 + 0.4, 0.8, 0.5); colorArray[i] = color.r; colorArray[i + 1] = color.g; colorArray[i + 2] = color.b;
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+        const particlesMaterial = new THREE.PointsMaterial({ size: 0.1, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+        let mouseXWebGL = 0, mouseYWebGL = 0, targetX = 0, targetY = 0;
+        document.addEventListener('mousemove', (event) => { mouseXWebGL = (event.clientX / window.innerWidth) * 2 - 1; mouseYWebGL = -(event.clientY / window.innerHeight) * 2 + 1; });
+        function animateWebGL() {
+            requestAnimationFrame(animateWebGL);
+            targetX += (mouseXWebGL - targetX) * 0.05; targetY += (mouseYWebGL - targetY) * 0.05;
+            particlesMesh.rotation.x += 0.0003; particlesMesh.rotation.y += 0.0005;
+            particlesMesh.rotation.x += targetY * 0.0005; particlesMesh.rotation.y += targetX * 0.0005;
+            renderer.render(scene, camera);
+        }
+        animateWebGL();
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); initOrbit(); });
+
+        // Profile Image Error Handling
+        const profileImg = document.getElementById('profileImage'), profileFallback = document.getElementById('profileFallback');
+        profileImg.onerror = function() { this.style.display = 'none'; profileFallback.classList.remove('hidden'); };
+
+        // Smooth Scroll for Anchors
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) { e.preventDefault(); const target = document.querySelector(this.getAttribute('href')); if (target) lenis.scrollTo(target, { offset: -100 }); });
+        });
+    </script>
+</body>
+</html>
