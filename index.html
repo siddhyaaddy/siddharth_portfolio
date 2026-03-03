@@ -72,10 +72,19 @@
         @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
         /* Hero Image */
-        .hero-image-container { position: relative; width: 400px; height: 400px; border-radius: 50%; overflow: hidden; border: 3px solid rgba(0, 255, 136, 0.3); box-shadow: 0 0 60px rgba(0, 255, 136, 0.2); animation: morph 8s ease-in-out infinite; }
+        /* .hero-image-container { position: relative; width: 400px; height: 400px; border-radius: 50%; overflow: hidden; border: 3px solid rgba(0, 255, 136, 0.3); box-shadow: 0 0 60px rgba(0, 255, 136, 0.2);  */
+        .hero-image-container { 
+    position: relative; 
+    width: 400px; 
+    height: 400px; 
+    border-radius: 50%; 
+    overflow: hidden; 
+    border: 3px solid rgba(0, 255, 136, 0.3); 
+    box-shadow: 0 0 60px rgba(0, 255, 136, 0.2); 
+} animation: morph 8s ease-in-out infinite; }
         .hero-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
         .hero-image-container:hover img { transform: scale(1.1); }
-        @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; } }
+        /* @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; } } */
 
         /* Orbit */
         .orbit-container { position: relative; width: 100%; height: 600px; }
@@ -222,7 +231,7 @@
                     <div class="flex gap-12 pt-8 border-t border-white/10">
                         <div><div class="display-font text-4xl font-bold text-neon">3.5</div><div class="text-sm text-white/40 mt-1">GPA</div></div>
                         <div><div class="display-font text-4xl font-bold text-electric">15+</div><div class="text-sm text-white/40 mt-1">Projects</div></div>
-                        <div><div class="display-font text-4xl font-bold text-heat">4</div><div class="text-sm text-white/40 mt-1">Internships</div></div>
+                        <div><div class="display-font text-4xl font-bold text-heat">3</div><div class="text-sm text-white/40 mt-1">Internships</div></div>
                     </div>
                 </div>
 
