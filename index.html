@@ -233,12 +233,18 @@
                             <div class="orbit-ring w-[320px] h-[320px] md:w-[400px] md:h-[400px] animate-spin" style="animation-duration: 25s; animation-direction: reverse; border-style: dashed;"></div>
                             <div class="orbit-ring w-[240px] h-[240px] md:w-[300px] md:h-[300px] animate-spin" style="animation-duration: 20s;"></div>
 
-                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                            <!-- <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                                 <div class="hero-image-container">
                                     <img src="./photo.jpeg" class="w-full h-full object-cover">
                                     <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-neon/20 to-electric/20 text-6xl font-bold text-white/20 hidden" id="profileFallback">SA</div>
                                 </div>
+                            </div> -->
+
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                             <div class="hero-image-container">
+                                <img src="./photo.jpeg" alt="Siddharth Adhikari" class="w-full h-full object-cover">
                             </div>
+                        </div>
 
                             <div class="orbit-item text-neon" data-orbit="outer" data-angle="0"><i class="fab fa-python"></i></div>
                             <div class="orbit-item text-electric" data-orbit="outer" data-angle="60"><i class="fas fa-database"></i></div>
@@ -811,9 +817,9 @@
         animateWebGL();
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); initOrbit(); });
 
-        // Profile Image Error Handling
-        const profileImg = document.getElementById('profileImage'), profileFallback = document.getElementById('profileFallback');
-        profileImg.onerror = function() { this.style.display = 'none'; profileFallback.classList.remove('hidden'); };
+        // // Profile Image Error Handling
+        // const profileImg = document.getElementById('profileImage'), profileFallback = document.getElementById('profileFallback');
+        // profileImg.onerror = function() { this.style.display = 'none'; profileFallback.classList.remove('hidden'); };
 
         // Smooth Scroll for Anchors
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
