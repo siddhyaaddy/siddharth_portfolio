@@ -220,3 +220,37 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.6; font-family: in
   .side { width: 150px; }
   .bar-status { display: none; }
 }
+
+/* ── photo manager ── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: .8rem;
+  margin-top: 1rem;
+}
+.photo {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.photo:hover { border-color: var(--ac); }
+.photo-thumb {
+  aspect-ratio: 1;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-meta { padding: .6rem .7rem .7rem; }
+.photo-name { font-size: .8rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.photo-sub { font-family: var(--mono); font-size: .68rem; color: var(--dim); margin-top: .2rem; }
+.photo-del {
+  position: absolute; top: .5rem; right: .5rem;
+  opacity: 0; transition: opacity .2s;
+  background: rgba(10,8,16,.85); backdrop-filter: blur(6px);
+}
+.photo:hover .photo-del { opacity: 1; }

@@ -107,6 +107,40 @@ async function gitStatus() {
   };
 }
 
+/* ── images ───────────────────────────────────────────────────────────────── */
+
+const IMG_DIR = path.join(ROOT, "assets", "img");
+const IMG_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"]);
+
+/** Only ever touch a plain filename inside assets/img — no paths, no traversal. */
+function safeImageName(name) {
+  const base = path.basename(String(name || "")).replace(/[^\w.\- ]/g, "_").trim();
+  if (!base || base.startsWith(".")) return null;
+  if (!IMG_EXT.has(path.extname(base).toLowerCase())) return null;
+  return base;
+}
+
+function listImages() {
+  if (!fs.existsSync(IMG_DIR)) return [];
+  return fs
+    .readdirSync(IMG_DIR)
+    .filter((f) => IMG_EXT.has(path.extname(f).toLowerCase()))
+    .map((f) => {
+      const st = fs.statSync(path.join(IMG_DIR, f));
+      return { name: f, path: `./assets/img/${f}`, bytes: st.size, modified: st.mtime.toISOString() };
+    })
+    .sort((a, b) => b.modified.localeCompare(a.modified));
+}
+
+/** Which data.js fields point at this file, so the UI can warn before deleting. */
+function imageUsage(profile, rel) {
+  const used = [];
+  for (const [slot, val] of Object.entries(profile.images || {})) {
+    if (val === rel) used.push(slot);
+  }
+  return used;
+}
+
 /* ── static serving ───────────────────────────────────────────────────────── */
 
 const MIME = {
@@ -174,6 +208,64 @@ const server = http.createServer(async (req, res) => {
       if (!profile || typeof profile !== "object") return json(res, 400, { error: "profile required" });
       writeProfile(profile);
       return json(res, 200, { ok: true, saved: new Date().toISOString() });
+    }
+
+    if (p === "/api/images" && req.method === "GET") {
+      const profile = readProfile();
+      return json(res, 200, {
+        images: listImages().map((im) => ({ ...im, usedBy: imageUsage(profile, im.path) })),
+        slots: profile.images || {},
+      });
+    }
+
+    /* Upload. The browser resizes and re-encodes before sending, so this only
+       ever receives a modest data URL — no multipart parser needed. */
+    if (p === "/api/images" && req.method === "POST") {
+      const { name, dataUrl } = await readBody(req);
+      const safe = safeImageName(name);
+      if (!safe) return json(res, 400, { error: "Name must be a plain .jpg/.png/.webp/.gif/.avif file" });
+
+      const m = /^data:image\/[a-z+]+;base64,(.+)$/i.exec(dataUrl || "");
+      if (!m) return json(res, 400, { error: "Expected a base64 image data URL" });
+
+      const buf = Buffer.from(m[1], "base64");
+      if (buf.length > 8e6) return json(res, 400, { error: "Image is larger than 8 MB after processing" });
+
+      fs.mkdirSync(IMG_DIR, { recursive: true });
+      let final = safe;
+      // Never silently clobber an existing file.
+      if (fs.existsSync(path.join(IMG_DIR, final))) {
+        const ext = path.extname(final);
+        final = `${path.basename(final, ext)}-${Date.now().toString(36)}${ext}`;
+      }
+      fs.writeFileSync(path.join(IMG_DIR, final), buf);
+      return json(res, 200, { ok: true, name: final, path: `./assets/img/${final}`, bytes: buf.length });
+    }
+
+    if (p === "/api/images" && req.method === "DELETE") {
+      const { name } = await readBody(req);
+      const safe = safeImageName(name);
+      if (!safe) return json(res, 400, { error: "Bad filename" });
+
+      const rel = `./assets/img/${safe}`;
+      const used = imageUsage(readProfile(), rel);
+      if (used.length) {
+        return json(res, 409, { error: `Still used by: ${used.join(", ")}. Point that slot elsewhere first.` });
+      }
+      const file = path.join(IMG_DIR, safe);
+      if (!fs.existsSync(file)) return json(res, 404, { error: "Not found" });
+      fs.unlinkSync(file);
+      return json(res, 200, { ok: true });
+    }
+
+    /* Assign an image to a slot (hero / about). */
+    if (p === "/api/images/slot" && req.method === "PUT") {
+      const { slot, path: rel } = await readBody(req);
+      if (!slot || !rel) return json(res, 400, { error: "slot and path required" });
+      const profile = readProfile();
+      profile.images = { ...(profile.images || {}), [slot]: rel };
+      writeProfile(profile);
+      return json(res, 200, { ok: true, slots: profile.images });
     }
 
     if (p === "/api/git" && req.method === "GET") {

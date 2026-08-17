@@ -521,7 +521,11 @@ const PROFILE = {
       "icon": "sigma",
       "accent": "violet"
     }
-  ]
+  ],
+  "images": {
+    "hero": "./assets/img/photo.jpeg",
+    "about": "./assets/img/photo2.jpg"
+  }
 };
 
 /* Derived — the chatbot's retrieval corpus is built from PROFILE so it can never drift. */

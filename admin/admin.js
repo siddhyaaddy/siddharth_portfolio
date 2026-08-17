@@ -16,6 +16,10 @@ const ACCENTS = ["primary", "cyan", "violet", "amber", "rose"];
 
 const SECTIONS = [
   {
+    key: "__photos", label: "Photos", group: "Core", type: "photos",
+    desc: "Upload, assign and delete images. Large photos are resized in the browser before upload so the site stays fast.",
+  },
+  {
     key: "__basics", label: "Profile", group: "Core", type: "object",
     desc: "Name, role, contact details and links. Shown in the hero, nav and contact section.",
     fields: [
@@ -358,6 +362,139 @@ function renderNav() {
   });
 }
 
+/* ── photos ───────────────────────────────────────────────────────────────── */
+
+const SLOTS = [
+  { k: "hero", label: "Hero portrait", note: "The circle in the hero. Square images work best." },
+  { k: "about", label: "About photo", note: "The tall image beside the About text (4:5)." },
+];
+
+const kb = (n) => (n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
+
+/**
+ * Resize and re-encode in a canvas before upload. A 4 MB phone photo becomes
+ * ~200 KB, which matters a lot on a portfolio recruiters open on mobile.
+ */
+function processImage(file, maxEdge = 1600, quality = 0.86) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Not a readable image"));
+      img.onload = () => {
+        const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, w, h);
+        // PNGs with transparency keep their format; everything else becomes JPEG.
+        const png = /\.png$/i.test(file.name);
+        resolve({ dataUrl: c.toDataURL(png ? "image/png" : "image/jpeg", quality), w, h, png });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function renderPhotos(work, head) {
+  const upload = document.createElement("label");
+  upload.className = "btn primary";
+  upload.style.cursor = "pointer";
+  upload.innerHTML = `+ Upload photo<input type="file" accept="image/*" multiple hidden>`;
+  head.append(upload);
+
+  const body = document.createElement("div");
+  body.innerHTML = `<div class="empty">Loading photos…</div>`;
+  work.append(body);
+
+  async function refresh() {
+    const { images, slots } = await api("/api/images");
+    body.innerHTML = "";
+
+    // Slot assignment
+    const slotWrap = document.createElement("div");
+    slotWrap.className = "item";
+    slotWrap.style.padding = "1.2rem";
+    slotWrap.innerHTML = `<div style="font-weight:600;margin-bottom:.9rem">Where each photo is used</div>`;
+    SLOTS.forEach((slot) => {
+      const cur = slots[slot.k];
+      const row = document.createElement("label");
+      row.className = "field";
+      row.innerHTML = `<span>${esc(slot.label)} <span class="hint">— ${esc(slot.note)}</span></span>`;
+      const sel = document.createElement("select");
+      sel.innerHTML = images
+        .map((im) => `<option value="${esc(im.path)}"${im.path === cur ? " selected" : ""}>${esc(im.name)}</option>`)
+        .join("");
+      sel.addEventListener("change", async () => {
+        try {
+          await api("/api/images/slot", { method: "PUT", body: JSON.stringify({ slot: slot.k, path: sel.value }) });
+          toast(`${slot.label} updated`, "ok");
+          refresh(); refreshGit(); reloadPreview();
+          const { profile } = await api("/api/data");
+          state.profile = profile;
+        } catch (e) { toast(e.message, "err"); }
+      });
+      row.append(sel);
+      slotWrap.append(row);
+    });
+    body.append(slotWrap);
+
+    // Gallery
+    const grid = document.createElement("div");
+    grid.className = "photo-grid";
+    images.forEach((im) => {
+      const card = document.createElement("div");
+      card.className = "photo";
+      card.innerHTML = `
+        <div class="photo-thumb"><img src="/site/assets/img/${encodeURIComponent(im.name)}?cb=${Date.now()}" alt=""></div>
+        <div class="photo-meta">
+          <div class="photo-name" title="${esc(im.name)}">${esc(im.name)}</div>
+          <div class="photo-sub">${kb(im.bytes)}${im.usedBy.length ? ` · in use: ${esc(im.usedBy.join(", "))}` : ""}</div>
+        </div>`;
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "btn tiny danger photo-del";
+      del.textContent = "Delete";
+      del.addEventListener("click", async () => {
+        if (!confirm(`Delete ${im.name}? This cannot be undone from here (git still has it).`)) return;
+        try {
+          await api("/api/images", { method: "DELETE", body: JSON.stringify({ name: im.name }) });
+          toast("Deleted", "ok"); refresh(); refreshGit();
+        } catch (e) { toast(e.message, "err"); }
+      });
+      card.append(del);
+      grid.append(card);
+    });
+    body.append(grid);
+
+    if (!images.length) body.insertAdjacentHTML("beforeend", `<div class="empty">No images yet — upload one.</div>`);
+  }
+
+  upload.querySelector("input").addEventListener("change", async (e) => {
+    const files = [...e.target.files];
+    e.target.value = "";
+    for (const f of files) {
+      try {
+        toast(`Processing ${f.name}…`);
+        const { dataUrl, w, h, png } = await processImage(f);
+        const name = f.name.replace(/\.[^.]+$/, "") + (png ? ".png" : ".jpg");
+        const r = await api("/api/images", { method: "POST", body: JSON.stringify({ name, dataUrl }) });
+        toast(`Uploaded ${r.name} — ${w}×${h}, ${kb(r.bytes)}`, "ok");
+      } catch (err) {
+        toast(`${f.name}: ${err.message}`, "err");
+      }
+    }
+    refresh(); refreshGit();
+  });
+
+  refresh().catch((e) => (body.innerHTML = `<div class="empty">${esc(e.message)}</div>`));
+}
+
 function renderSection() {
   const s = SECTIONS.find((x) => x.key === state.current);
   const work = $("#work");
@@ -367,6 +504,8 @@ function renderSection() {
   head.className = "sec-head";
   head.innerHTML = `<div><div class="sec-title">${esc(s.label)}</div>${s.desc ? `<div class="sec-desc">${esc(s.desc)}</div>` : ""}</div>`;
   work.append(head);
+
+  if (s.type === "photos") return renderPhotos(work, head);
 
   if (s.type === "object") {
     const body = document.createElement("div");

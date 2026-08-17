@@ -168,9 +168,21 @@ node admin/server.cjs        # → http://localhost:4321
 | **Discard changes** | `git checkout` on `data.js` — back to the last commit |
 | **Publish →** | Commit + push. Vercel redeploys in ~30s |
 
-Editable: profile and links, rotating roles, hero metrics, about text and highlights,
-ticker, experience, projects, toolkit, radar, education, certifications — with add,
-delete and reorder on every list.
+Editable: **photos**, profile and links, rotating roles, hero metrics, about text and
+highlights, ticker, experience, projects, toolkit, radar, education, certifications — with
+add, delete and reorder on every list.
+
+### Photos
+
+`assets/img/` is managed from the **Photos** section: upload, delete, and assign which file
+fills each slot (`images.hero`, `images.about` in `data.js`). Uploads are **resized and
+re-encoded in the browser** before they are sent — a 4 MB phone photo lands as ~200 KB, which
+matters on a portfolio recruiters open on mobile.
+
+Guards, all covered by tests: filenames are reduced to a basename inside `assets/img` so a
+path like `../../evil.png` cannot escape; only image extensions are accepted; a name collision
+is suffixed rather than overwriting; and deleting an image still referenced by a slot returns
+409 instead of leaving a broken `<img>`.
 
 ### How it stays safe
 

@@ -34,6 +34,10 @@ function renderHero(p) {
   splitWords($("#heroTagline"), p.tagline);
 
   $("#portalRole").textContent = `${p.role} · ${p.location.split("·")[0].trim()}`;
+
+  /* Image paths live in data.js so the admin panel can swap them. */
+  if (p.images?.hero) $("#heroPhoto").src = p.images.hero;
+  if (p.images?.about) $("#aboutPhoto").src = p.images.about;
   $("#navMail").textContent = p.email;
   $("#navMail").href = p.links.email;
   $("#railResume").href = p.resume;
