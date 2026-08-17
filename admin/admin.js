@@ -426,35 +426,51 @@ async function renderPhotos(work, head) {
       const row = document.createElement("label");
       row.className = "field";
       row.innerHTML = `<span>${esc(slot.label)} <span class="hint">— ${esc(slot.note)}</span></span>`;
+      const picker = document.createElement("div");
+      picker.style.display = "flex";
+      picker.style.gap = ".5rem";
       const sel = document.createElement("select");
       sel.innerHTML = images
         .map((im) => `<option value="${esc(im.path)}"${im.path === cur ? " selected" : ""}>${esc(im.name)}</option>`)
         .join("");
-      sel.addEventListener("change", async () => {
+      // Applies on an explicit click, not on `change` — arrowing through
+      // options (mouse or keyboard) can no longer write to disk by accident.
+      const apply = document.createElement("button");
+      apply.type = "button";
+      apply.className = "btn tiny";
+      apply.textContent = "Use this photo";
+      apply.addEventListener("click", async () => {
+        if (sel.value === cur) return toast("Already set", "");
         try {
           await api("/api/images/slot", { method: "PUT", body: JSON.stringify({ slot: slot.k, path: sel.value }) });
-          toast(`${slot.label} updated`, "ok");
+          toast(`${slot.label} → ${sel.value.split("/").pop()}`, "ok");
           refresh(); refreshGit(); reloadPreview();
           const { profile } = await api("/api/data");
           state.profile = profile;
         } catch (e) { toast(e.message, "err"); }
       });
-      row.append(sel);
+      picker.append(sel, apply);
+      row.append(picker);
       slotWrap.append(row);
     });
     body.append(slotWrap);
 
-    // Gallery
+    // Gallery — each card shows a badge for every slot pointing at it, so a
+    // slot change is visible immediately instead of only discoverable by
+    // checking the live site afterwards.
     const grid = document.createElement("div");
     grid.className = "photo-grid";
     images.forEach((im) => {
       const card = document.createElement("div");
-      card.className = "photo";
+      card.className = "photo" + (im.usedBy.length ? " active" : "");
+      const badges = im.usedBy
+        .map((slotKey) => `<span class="photo-badge">${esc(SLOTS.find((s) => s.k === slotKey)?.label || slotKey)}</span>`)
+        .join("");
       card.innerHTML = `
-        <div class="photo-thumb"><img src="/site/assets/img/${encodeURIComponent(im.name)}?cb=${Date.now()}" alt=""></div>
+        <div class="photo-thumb">${badges}<img src="/site/assets/img/${encodeURIComponent(im.name)}?cb=${Date.now()}" alt=""></div>
         <div class="photo-meta">
           <div class="photo-name" title="${esc(im.name)}">${esc(im.name)}</div>
-          <div class="photo-sub">${kb(im.bytes)}${im.usedBy.length ? ` · in use: ${esc(im.usedBy.join(", "))}` : ""}</div>
+          <div class="photo-sub">${kb(im.bytes)}</div>
         </div>`;
       const del = document.createElement("button");
       del.type = "button";

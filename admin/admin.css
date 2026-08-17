@@ -254,3 +254,18 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.6; font-family: in
   background: rgba(10,8,16,.85); backdrop-filter: blur(6px);
 }
 .photo:hover .photo-del { opacity: 1; }
+
+/* ── active-slot badges ── */
+.photo.active { border-color: var(--ac); }
+.photo-thumb { position: relative; }
+.photo-badge {
+  position: absolute; top: .4rem; left: .4rem; z-index: 1;
+  padding: .18rem .5rem;
+  border-radius: 99px;
+  background: var(--ac);
+  color: #14091f;
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.photo-badge + .photo-badge { top: 1.7rem; }
