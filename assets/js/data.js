@@ -523,7 +523,7 @@ const PROFILE = {
     }
   ],
   "images": {
-    "hero": "./assets/img/photo.jpeg",
+    "hero": "./assets/img/pic1.png",
     "about": "./assets/img/photo2.jpg"
   }
 };
