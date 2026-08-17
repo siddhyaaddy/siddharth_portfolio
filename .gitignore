@@ -1,0 +1,11 @@
+# Local editor / agent settings
+.claude/
+
+# OS cruft
+.DS_Store
+
+# Node (only if you ever add tooling — the site itself has no dependencies)
+node_modules/
+.vercel/
+.env
+.env.local
