@@ -9,15 +9,12 @@
  * ── Deploy (Vercel) ─────────────────────────────────────────────────────────
  *   1. Import the repo at vercel.com/new
  *   2. Add an environment variable:  LLM_API_KEY = <your free key>
- *   3. Deploy, then set `endpoint` in assets/js/chat.js to
- *      https://<your-project>.vercel.app/api/chat
+ *   3. Deploy. Nothing else — the browser calls /api/chat on the same origin.
  *
  * ── Providers (all have a free tier) ────────────────────────────────────────
  *   OpenRouter (default)  https://openrouter.ai/keys
  *     LLM_BASE_URL = https://openrouter.ai/api/v1
- *     LLM_MODEL    = google/gemma-4-31b-it:free
- *                  | openai/gpt-oss-20b:free
- *                  | nvidia/nemotron-3-super-120b-a12b:free
+ *     LLM_MODEL    = openai/gpt-oss-20b:free,google/gemma-4-26b-a4b-it:free
  *
  *   Groq (fastest; this is where Qwen lives)   https://console.groq.com/keys
  *     LLM_BASE_URL = https://api.groq.com/openai/v1
@@ -27,13 +24,23 @@
  *     LLM_BASE_URL = http://localhost:11434/v1
  *     LLM_MODEL    = qwen2.5:7b
  *
- * Free tiers change often — if a model 404s, pick another from the provider's
- * model list and update LLM_MODEL. No code change needed.
+ * Free tiers are shared pools and rate-limit without warning, so LLM_MODEL is a
+ * comma-separated chain tried in order. Verified behaviour when this was written:
+ * reasoning-tuned models (e.g. nemotron-3-nano) emit their chain-of-thought as
+ * the answer — don't put those in the chain.
  */
 
 const BASE_URL = process.env.LLM_BASE_URL || "https://openrouter.ai/api/v1";
-const MODEL = process.env.LLM_MODEL || "google/gemma-4-31b-it:free";
 const API_KEY = process.env.LLM_API_KEY;
+
+/* Free pools are shared and get rate-limited without warning, so try a chain
+   rather than a single model — the first one that answers wins. Comma-separate
+   LLM_MODEL to override. Keep reasoning models out of the default: several emit
+   their chain-of-thought as the answer, which reads terribly on a portfolio. */
+const MODELS = (process.env.LLM_MODEL || "openai/gpt-oss-20b:free,google/gemma-4-26b-a4b-it:free")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 /** Comma-separated in env, e.g. "https://siddharth.vercel.app,https://siddhyaaddy.github.io" */
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ||
@@ -76,6 +83,9 @@ function allow(ip) {
   return null;
 }
 
+/** Header values must be Latin-1; strip anything a ByteString can't hold. */
+const ascii = (s) => String(s).replace(/[^\x20-\x7E]/g, "");
+
 const SYSTEM = `You are the AI assistant embedded in Siddharth Adhikari's portfolio site.
 
 Visitors are usually recruiters, hiring managers, or engineers evaluating him.
@@ -105,7 +115,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       ok: true,
       configured: Boolean(API_KEY),
-      model: API_KEY ? MODEL : null,
+      models: API_KEY ? MODELS : null,
     });
   }
 
@@ -144,44 +154,60 @@ module.exports = async (req, res) => {
       .slice(-6)
       .map((m) => ({ role: m.role, content: String(m.content).slice(0, 2000) }));
 
-    const upstream = await fetch(`${BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${API_KEY}`,
-        // OpenRouter asks for these; harmless elsewhere.
-        "HTTP-Referer": origin || "https://siddhyaaddy.github.io",
-        "X-Title": "Siddharth Adhikari — Portfolio",
+    const messages = [
+      { role: "system", content: SYSTEM },
+      ...priorTurns,
+      {
+        role: "user",
+        content: `CONTEXT (from Siddharth's résumé and project notes):\n${context}\n\nQUESTION: ${question}`,
       },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 500,
-        temperature: 0.3,
-        messages: [
-          { role: "system", content: SYSTEM },
-          ...priorTurns,
-          {
-            role: "user",
-            content: `CONTEXT (from Siddharth's résumé and project notes):\n${context}\n\nQUESTION: ${question}`,
-          },
-        ],
-      }),
-    });
+    ];
 
-    if (!upstream.ok) {
-      const detail = await upstream.text().catch(() => "");
-      console.error("LLM upstream error", upstream.status, detail.slice(0, 400));
-      // The browser falls back to the local retrieval engine on any non-200.
-      return res.status(502).json({ error: "Assistant backend unavailable" });
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${API_KEY}`,
+      /* OpenRouter asks for these; harmless elsewhere. Header values are
+         ByteStrings — any character above U+00FF throws when fetch builds the
+         request, so keep them strictly ASCII (an em dash here was enough to
+         fail every single call). */
+      "HTTP-Referer": ascii(origin || "https://siddhyaaddy.github.io"),
+      "X-Title": ascii("Siddharth Adhikari Portfolio"),
+    };
+
+    let lastStatus = 0;
+    for (const model of MODELS) {
+      let upstream;
+      try {
+        upstream = await fetch(`${BASE_URL}/chat/completions`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ model, max_tokens: 500, temperature: 0.3, messages }),
+        });
+      } catch (netErr) {
+        console.error("LLM fetch failed", model, netErr.message);
+        continue; // try the next model
+      }
+
+      if (!upstream.ok) {
+        lastStatus = upstream.status;
+        const detail = await upstream.text().catch(() => "");
+        console.error("LLM upstream error", model, upstream.status, detail.slice(0, 300));
+        continue; // rate-limited or down — fall through to the next model
+      }
+
+      const data = await upstream.json().catch(() => null);
+      const answer = data?.choices?.[0]?.message?.content?.trim();
+      if (!answer) {
+        console.error("LLM empty answer", model);
+        continue;
+      }
+
+      return res.status(200).json({ answer, model });
     }
 
-    const data = await upstream.json();
-    const answer = data?.choices?.[0]?.message?.content?.trim();
-
-    return res.status(200).json({
-      answer: answer || "I don't have that in my notes.",
-      model: MODEL,
-    });
+    // Every model failed. The browser falls back to local retrieval on non-200.
+    console.error("All models failed", MODELS.join(","), "last status", lastStatus);
+    return res.status(502).json({ error: "Assistant backend unavailable" });
   } catch (err) {
     console.error("Unexpected error", err);
     return res.status(500).json({ error: "Internal error" });

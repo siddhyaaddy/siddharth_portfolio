@@ -122,18 +122,20 @@ just works; on GitHub Pages the same code finds nothing and stays local.
 
 ### Choosing a model
 
-Defaults to `google/gemma-4-31b-it:free` on OpenRouter. Swap with env vars alone — no redeploy
-of code, just a settings change:
+Free tiers are **shared pools that rate-limit without warning**, so `LLM_MODEL` is a
+comma-separated *chain* tried in order — the first model that answers wins. Default:
+`openai/gpt-oss-20b:free,google/gemma-4-26b-a4b-it:free`. Swap with env vars alone:
 
 | Want | `LLM_BASE_URL` | `LLM_MODEL` |
 |---|---|---|
-| Default (open weights) | *(unset)* | *(unset)* |
+| Default chain (open weights) | *(unset)* | *(unset)* |
 | **Qwen** — Groq hosts it, and is the fastest free tier | `https://api.groq.com/openai/v1` | `qwen/qwen3-32b` |
-| Larger reasoning | *(unset)* | `nvidia/nemotron-3-super-120b-a12b:free` |
+| Single model only | *(unset)* | `openai/gpt-oss-20b:free` |
 | Fully local, no key | `http://localhost:11434/v1` | `qwen2.5:7b` |
 
-Free-tier lineups change often. If a model 404s, pick another from the provider's model list —
-that is why nothing is hardcoded. Every provider above speaks the OpenAI-compatible
+Free-tier lineups change often, and models rate-limit without warning — that is why the chain
+exists and why nothing is hardcoded. Avoid reasoning-tuned models in the chain: several emit
+their chain-of-thought as the answer. Every provider above speaks the OpenAI-compatible
 `/chat/completions` shape, which is why `api/chat.js` is one plain `fetch` with no SDK.
 
 ### Guardrails
