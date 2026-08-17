@@ -97,6 +97,18 @@ module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(204).end();
+
+  /* Health probe. The browser calls this once on load to decide whether to use
+     the LLM or stay on the local retrieval engine, so it must stay cheap and
+     must never touch the upstream provider. */
+  if (req.method === "GET") {
+    return res.status(200).json({
+      ok: true,
+      configured: Boolean(API_KEY),
+      model: API_KEY ? MODEL : null,
+    });
+  }
+
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   if (!API_KEY) {

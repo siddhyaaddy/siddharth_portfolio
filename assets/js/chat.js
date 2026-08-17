@@ -12,11 +12,14 @@
  */
 
 const CHAT = {
-  /* null = local retrieval engine (free, no backend, works anywhere).
-     Set to your deployed proxy to answer with a free open-weight LLM instead:
-     "https://<your-project>.vercel.app/api/chat" — see api/chat.js */
-  endpoint: null,
-  /* Shown in the panel header when `endpoint` is set. */
+  /* Relative on purpose: on Vercel the function is same-origin, so there is
+     nothing to configure after deploying and no CORS list to maintain.
+     The page probes it once on load — if it isn't there (GitHub Pages) or has
+     no API key set, the assistant quietly stays in local retrieval mode.
+     Set to null to force local mode; set to an absolute URL to call a proxy
+     hosted somewhere other than the site itself. */
+  endpoint: "/api/chat",
+  /* Shown in the panel header once the remote backend answers the probe. */
   remoteLabel: "Open-weight LLM · live",
   greeting: `Hi — I'm Siddharth's assistant. I've read his résumé and project notes, so ask me anything: what he built at **ASM International**, how the DeBERTa fine-tune scored, which parts of the stack he actually uses day to day.`,
   suggestions: [
@@ -146,6 +149,27 @@ function localAnswer(question) {
 /* ============================================================
    Remote mode — free open-weight LLM via the serverless proxy
    ============================================================ */
+/**
+ * Is a configured backend actually there? Answered once, cheaply, via GET.
+ * Anything other than a clear yes means local mode — a missing function
+ * (404 on GitHub Pages), a missing API key (503), or no network at all.
+ */
+async function probeRemote() {
+  if (!CHAT.endpoint) return false;
+  try {
+    const res = await fetch(CHAT.endpoint, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data?.configured === true;
+  } catch {
+    return false;
+  }
+}
+
 async function remoteAnswer(question, history) {
   const hits = retrieve(question, 4);
   const context = hits.map((h) => `## ${h.doc.topic}\n${h.doc.text}`).join("\n\n");
@@ -175,7 +199,13 @@ async function remoteAnswer(question, history) {
   let busy = false;
   let greeted = false;
 
-  $("#chatMode").textContent = CHAT.endpoint ? CHAT.remoteLabel : "Local knowledge base";
+  /* Local until proven otherwise, so the label is never optimistic. */
+  let remoteReady = false;
+  $("#chatMode").textContent = "Local knowledge base";
+  probeRemote().then((ok) => {
+    remoteReady = ok;
+    if (ok) $("#chatMode").textContent = CHAT.remoteLabel;
+  });
 
   /* Minimal markdown: **bold**, links, - lists, newlines */
   function md(text) {
@@ -261,10 +291,12 @@ async function remoteAnswer(question, history) {
 
     let reply;
     try {
-      reply = CHAT.endpoint ? await remoteAnswer(question, history) : localAnswer(question);
+      reply = remoteReady ? await remoteAnswer(question, history) : localAnswer(question);
     } catch (err) {
-      reply = localAnswer(question); // graceful fallback if the backend is down
-      reply.text = reply.text + `\n\n_(Live model unreachable — answered from the local knowledge base.)_`;
+      // Backend down, rate-limited or slow: answer locally rather than error.
+      reply = localAnswer(question);
+      $("#chatMode").textContent = "Local knowledge base";
+      remoteReady = false;
     }
 
     await stream(placeholder, reply.text, reply.sources);

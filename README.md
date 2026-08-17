@@ -93,30 +93,57 @@ python3 -m http.server 8000
 
 ## The AI assistant
 
-Two modes, set at the top of [`assets/js/chat.js`](assets/js/chat.js).
+Two modes, and it picks between them by itself.
 
-**Local (default, `endpoint: null`)** — a BM25 retrieval engine over a knowledge base built
-from `data.js` at page load. Every visitor can use it. No API key, no backend, no cost, works
-on any host. This is what's live today.
+**Local (always available)** — a BM25 retrieval engine over a knowledge base built from
+`data.js` at page load. Every visitor can use it. No API key, no backend, no cost, works on
+any host including GitHub Pages.
 
-**Free open-weight LLM (`endpoint: "https://…/api/chat"`)** — the retrieval step still runs in
-the browser to select context, then that context plus the question go to the serverless
-function, which calls a free open-weight model. Deploy on Vercel and set one env var:
+**Free open-weight LLM (when a backend is present)** — the retrieval step still runs in the
+browser to select context, then that context plus the question go to `api/chat.js`, which
+calls a free open-weight model.
 
-```
-LLM_API_KEY = <free key from openrouter.ai/keys or console.groq.com/keys>
-```
+On load the page does one cheap `GET /api/chat`. If it answers `{configured: true}` the
+assistant upgrades itself; a 404 (GitHub Pages), a 503 (no key set) or a timeout leaves it in
+local mode. If a live call later fails or gets rate-limited, it falls back to local for that
+answer rather than showing an error. A recruiter never sees a broken widget.
 
-No `package.json` and no dependencies — every supported provider speaks the OpenAI-compatible
-`/chat/completions` shape, so `api/chat.js` is one plain `fetch`. Swap provider or model with
-env vars alone (`LLM_BASE_URL`, `LLM_MODEL`); current options are listed in that file's header.
-If the backend is down, rate-limited or unconfigured, the widget silently falls back to local
-mode — a recruiter never sees an error.
+### Deploying the LLM mode on Vercel
+
+1. Get a free key — [openrouter.ai/keys](https://openrouter.ai/keys) or
+   [console.groq.com/keys](https://console.groq.com/keys)
+2. Import the repo at [vercel.com/new](https://vercel.com/new)
+3. Add one environment variable: `LLM_API_KEY`
+4. Deploy
+
+That's the whole thing. **No code edit, no `package.json`, no CORS list, no `vercel.json`.**
+`CHAT.endpoint` is the relative path `/api/chat`, so on Vercel the function is same-origin and
+just works; on GitHub Pages the same code finds nothing and stays local.
+
+### Choosing a model
+
+Defaults to `google/gemma-4-31b-it:free` on OpenRouter. Swap with env vars alone — no redeploy
+of code, just a settings change:
+
+| Want | `LLM_BASE_URL` | `LLM_MODEL` |
+|---|---|---|
+| Default (open weights) | *(unset)* | *(unset)* |
+| **Qwen** — Groq hosts it, and is the fastest free tier | `https://api.groq.com/openai/v1` | `qwen/qwen3-32b` |
+| Larger reasoning | *(unset)* | `nvidia/nemotron-3-super-120b-a12b:free` |
+| Fully local, no key | `http://localhost:11434/v1` | `qwen2.5:7b` |
+
+Free-tier lineups change often. If a model 404s, pick another from the provider's model list —
+that is why nothing is hardcoded. Every provider above speaks the OpenAI-compatible
+`/chat/completions` shape, which is why `api/chat.js` is one plain `fetch` with no SDK.
+
+### Guardrails
+
+`RATE_PER_IP_HOUR` (default 20) and `RATE_GLOBAL_DAY` (default 500) cap usage.
 
 > **CORS is not access control.** It stops other websites embedding the endpoint; it does not
-> stop someone calling the URL directly with a script. The per-IP hourly cap and global daily
-> cap in `api/chat.js` are the actual protection. They're in-memory, so they're best-effort on
-> serverless — move them to Vercel KV if the site ever gets real traffic.
+> stop someone calling the URL directly with a script. The rate caps are the actual protection.
+> They're in-memory, so on serverless they're best-effort — move them to Vercel KV if the site
+> ever gets real traffic.
 
 > A static site cannot hold a secret. Never put an API key in `chat.js`; anything in the
 > browser bundle is public. The proxy exists so the key stays server-side.
