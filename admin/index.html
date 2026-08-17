@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230a070e'/><text y='70' x='50' text-anchor='middle' font-size='54' font-family='sans-serif' font-weight='800' fill='%23a97bff'>A</text></svg>">
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand"><span class="dot"></span> Portfolio Admin</div>
+
+  <div class="bar-status" id="gitStatus">…</div>
+
+  <div class="bar-actions">
+    <button class="btn ghost" id="btnPreview" type="button">Preview</button>
+    <button class="btn ghost" id="btnRevert" type="button">Discard changes</button>
+    <button class="btn" id="btnSave" type="button">Save to file</button>
+    <button class="btn primary" id="btnPublish" type="button">Publish →</button>
+  </div>
+</header>
+
+<main class="shell">
+  <nav class="side" id="nav" aria-label="Sections"></nav>
+
+  <section class="work" id="work">
+    <div class="empty">Loading…</div>
+  </section>
+
+  <aside class="preview" id="previewPane" hidden>
+    <div class="preview-head">
+      <span>Live preview</span>
+      <div>
+        <button class="btn tiny" id="btnReload" type="button">Reload</button>
+        <button class="btn tiny" id="btnClosePreview" type="button">Close</button>
+      </div>
+    </div>
+    <iframe id="previewFrame" title="Site preview" src="about:blank"></iframe>
+  </aside>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <h2 id="modalTitle">Publish</h2>
+    <p class="modal-sub">This commits your changes and pushes to GitHub. Vercel redeploys automatically.</p>
+    <label class="field">
+      <span>Commit message</span>
+      <input type="text" id="commitMsg" placeholder="Update experience at ASM International">
+    </label>
+    <div class="modal-diff" id="modalDiff"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="modalCancel" type="button">Cancel</button>
+      <button class="btn primary" id="modalConfirm" type="button">Commit &amp; push</button>
+    </div>
+  </div>
+</div>
+
+<script src="/admin.js"></script>
+</body>
+</html>

@@ -150,6 +150,45 @@ their chain-of-thought as the answer. Every provider above speaks the OpenAI-com
 > A static site cannot hold a secret. Never put an API key in `chat.js`; anything in the
 > browser bundle is public. The proxy exists so the key stays server-side.
 
+## Admin panel (local CMS)
+
+CRUD for every section of the site, with no hosting and no database. It edits
+`assets/js/data.js`, then commits and pushes — Vercel is connected to the repo, so
+**pushing is what publishes**. Every content change is therefore an ordinary git commit:
+diffable, revertable, and impossible to lose.
+
+```bash
+node admin/server.cjs        # → http://localhost:4321
+```
+
+| Button | What it does |
+|---|---|
+| **Save to file** | Writes the edited PROFILE back into `data.js` (⌘S also works) |
+| **Preview** | Live iframe of the real site, served from your working copy |
+| **Discard changes** | `git checkout` on `data.js` — back to the last commit |
+| **Publish →** | Commit + push. Vercel redeploys in ~30s |
+
+Editable: profile and links, rotating roles, hero metrics, about text and highlights,
+ticker, experience, projects, toolkit, radar, education, certifications — with add,
+delete and reorder on every list.
+
+### How it stays safe
+
+- Binds to `127.0.0.1` only, so it is not reachable from another machine. There is no
+  auth; do not expose it through a tunnel.
+- `data.js` is re-parsed in a sandbox **before** anything is written — a change that
+  would break the file is rejected rather than saved.
+- The PROFILE literal is located by brace-matching that skips strings and comments, so
+  content containing `}` or quotes round-trips intact.
+- `.vercelignore` keeps `admin/` out of the deployment — the panel never ships publicly.
+- The AI assistant's knowledge base is rebuilt from PROFILE at page load, so edits reach
+  the assistant with no extra step.
+
+### Adding a field
+
+Sections are described once in the `SECTIONS` schema in `admin/admin.js`; the forms are
+generated from it. A new field in `data.js` needs one line there, not a new form.
+
 ## Notes
 
 - Skill radar values are self-assessed and labelled as such on the card.

@@ -1,0 +1,4 @@
+# The admin panel is local-only — it must never ship to the public site.
+admin/
+.env
+.env.example
