@@ -63,9 +63,7 @@ const PROFILE = {
   "about": {
     "heading": "From raw tables to systems people trust",
     "paragraphs": [
-      "I'm a data scientist with a Master's from the <strong>University at Buffalo</strong> and an engineering background from <strong>Savitribai Phule Pune University</strong>. My work sits where analytics meets production: ETL that doesn't silently break, models that survive contact with real users, and retrieval systems that give an answer someone can defend in a meeting.",
-      "At <strong>ASM International</strong> I build the LLM enrichment and vector-search backbone behind Mat-E Pro — a RAG assistant over materials science literature. Before that, at <strong>Youro LLC</strong>, I worked directly with the CEO turning healthcare data into product decisions.",
-      "I care about the unglamorous half of the job: schema design, cross-validation discipline, experiment tracking, and reporting that a non-technical stakeholder can read in thirty seconds."
+      "I'm a data scientist with a Master's from the <strong>University at Buffalo</strong> and an engineering background from <strong>Savitribai Phule Pune University</strong>. My work sits where analytics meets production: ETL that doesn't silently break, models that survive contact with real users, and retrieval systems that give an answer someone can defend in a meeting."
     ],
     "highlights": [
       {
