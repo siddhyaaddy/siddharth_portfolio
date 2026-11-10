@@ -113,11 +113,26 @@ const PROFILE = {
   ],
   "experience": [
     {
+      "company": "Redprint",
+      "role": "Data Scientist",
+      "period": "Sep 2026 — Present",
+      "current": true,
+      "location": "Buffalo, NY",
+      "blurb": "Developing Python and SQL-driven analytics and personalized workout recommendation models using member activity, workout history, and equipment usage data to improve fitness experiences and gym operations.",
+      "points": [
+        "Analyzing workout, member, and NFC-tagged equipment usage data using Python and SQL, preparing datasets for personalized fitness insights and gym operations.",
+        "Building and testing models for personalized workout recommendations and progress tracking, collaborating with engineers to integrate data features into the product.",
+        "Developing dashboards and reports on member engagement and equipment utilization, translating findings into insights for gym operators and product teams."
+      ],
+      "tags": [],
+      "accent": "primary"
+    },
+    {
       "company": "ASM International",
       "role": "Data Science Intern",
-      "period": "May 2026 — Present",
-      "current": true,
-      "location": "Remote / Hybrid",
+      "period": "May 2026 — Aug 2026",
+      "current": false,
+      "location": "Cleveland, OH",
       "blurb": "Building the data and LLM infrastructure behind AI-powered search across a half-million scientific documents.",
       "points": [
         "Engineered machine learning data pipelines for <strong>500K+ scientific documents</strong>, boosting OpenSearch index coverage by 35% and reducing data quality errors to significantly improve AI-powered search accuracy.",
