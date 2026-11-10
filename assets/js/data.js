@@ -509,9 +509,16 @@ const PROFILE = {
     {
       "name": "IBM Data Science Professional Certificate",
       "issuer": "IBM",
-      "year": "Ongoing",
+      "year": "2026",
       "icon": "brain",
       "accent": "primary"
+    },
+    {
+      "name": "Mathematical Optimization Models",
+      "issuer": "Coursework",
+      "year": "2024",
+      "icon": "sigma",
+      "accent": "violet"
     },
     {
       "name": "Data Analytics Professional Certificate",
@@ -526,13 +533,6 @@ const PROFILE = {
       "year": "2025",
       "icon": "bolt",
       "accent": "cyan"
-    },
-    {
-      "name": "Mathematical Optimization Models",
-      "issuer": "Coursework",
-      "year": "2024",
-      "icon": "sigma",
-      "accent": "violet"
     }
   ],
   "images": {
