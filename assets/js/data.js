@@ -537,8 +537,8 @@ function buildKnowledgeBase(p) {
     ["who", "about", "intro", "yourself", "bio", "summary", "siddharth"]);
 
   add("contact", "Contact",
-    `You can reach Siddharth by email at ${p.email} or by phone at ${p.phone}. He is on LinkedIn (${p.links.linkedin}), GitHub (${p.links.github}) and Kaggle (${p.links.kaggle}). Status: ${p.availability}.`,
-    ["contact", "email", "phone", "reach", "hire", "linkedin", "github", "kaggle", "available", "availability"]);
+    `You can reach Siddharth by email at ${p.email} or by phone at ${p.phone}. ${p.links.linkedin ? `He is on LinkedIn (${p.links.linkedin}), GitHub (${p.links.github}) and Kaggle (${p.links.kaggle}).` : `He is on GitHub (${p.links.github}) and Kaggle (${p.links.kaggle}).`} Status: ${p.availability}.`,
+    ["contact", "email", "phone", "reach", "hire", ...(p.links.linkedin ? ["linkedin"] : []), "github", "kaggle", "available", "availability"]);
 
   p.experience.forEach((e, i) => {
     add(`exp-${i}`, `${e.role} @ ${e.company}`,

@@ -427,7 +427,9 @@ $$(".card").forEach((card) => {
     },
     { group: "Actions", label: "Toggle light / dark theme", hint: "Theme", icon: "moon", run: () => $("#themeToggle").click() },
     { group: "Links", label: "GitHub", hint: "@" + PROFILE.github, icon: "github", run: () => window.open(PROFILE.links.github, "_blank", "noopener") },
-    { group: "Links", label: "LinkedIn", hint: "Profile", icon: "linkedin", run: () => window.open(PROFILE.links.linkedin, "_blank", "noopener") },
+    ...(PROFILE.links.linkedin
+      ? [{ group: "Links", label: "LinkedIn", hint: "Profile", icon: "linkedin", run: () => window.open(PROFILE.links.linkedin, "_blank", "noopener") }]
+      : []),
     { group: "Links", label: "Kaggle", hint: "Profile", icon: "kaggle", run: () => window.open(PROFILE.links.kaggle, "_blank", "noopener") },
   ];
 

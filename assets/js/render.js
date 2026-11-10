@@ -56,6 +56,7 @@ function renderHero(p) {
     ["kaggle", p.links.kaggle, "Kaggle"],
     ["mail", p.links.email, "Email"],
   ]
+    .filter(([, href]) => href) // a link left blank (e.g. LinkedIn) isn't shown
     .map(([ic, href, label]) => `<a href="${href}" target="_blank" rel="noopener" aria-label="${label}">${icon(ic)}</a>`)
     .join("");
 
@@ -291,6 +292,7 @@ function renderContact(p) {
     ["LinkedIn", p.links.linkedin],
     ["Kaggle", p.links.kaggle],
   ]
+    .filter(([, href]) => href)
     .map(([label, href]) => `<a href="${href}" target="_blank" rel="noopener">${label}</a>`)
     .join("");
 }
