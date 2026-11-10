@@ -28,7 +28,7 @@ const PROFILE = {
   "github": "siddhyaaddy",
   "links": {
     "github": "https://github.com/siddhyaaddy",
-    "linkedin": "https://www.linkedin.com/in/siddharth-adhikari-40199b203/",
+    "linkedin": "",
     "kaggle": "https://www.kaggle.com/siddharthadhikari07",
     "email": "mailto:siddharthadhikari.workspace@gmail.com"
   },
