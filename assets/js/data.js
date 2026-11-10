@@ -118,11 +118,11 @@ const PROFILE = {
       "period": "Sep 2026 — Present",
       "current": true,
       "location": "Buffalo, NY",
-      "blurb": "Developing Python and SQL-driven analytics and personalized workout recommendation models using member activity, workout history, and equipment usage data to improve fitness experiences and gym operations.",
+      "blurb": "Developing AI-powered fitness solutions through LLM evaluation, LiDAR-based gym mapping, and Python/SQL analytics to improve personalized workout recommendations and equipment utilization.",
       "points": [
-        "Analyzing workout, member, and NFC-tagged equipment usage data using Python and SQL, preparing datasets for personalized fitness insights and gym operations.",
-        "Building and testing models for personalized workout recommendations and progress tracking, collaborating with engineers to integrate data features into the product.",
-        "Developing dashboards and reports on member engagement and equipment utilization, translating findings into insights for gym operators and product teams."
+        "Built an LLM evaluation pipeline to check 300+ AI-generated workout plans against gym equipment lists, reducing recommendations for unavailable equipment by 42%.",
+        "Developed a data pipeline to convert Apple RoomPlan LiDAR scans into structured JSON, helping developers create digital gym layouts within the application.",
+        "Built Python and SQL pipelines to track gym equipment activity across 20 gyms, processing 40K+ monthly NFC scans to identify equipment interactions and support workout analytics."
       ],
       "tags": [],
       "accent": "primary"
